@@ -1,18 +1,25 @@
 const router = require("express")();
 
-// import validators
+const SessionController = require("./controllers/SessionController");
+const ProfileController = require("./controllers/ProfileController");
+const NgoController = require("./controllers/NgoController");
+const IncidentController = require("./controllers/IncidentController");
+
 const middlewares = require("./middlewares/index");
 const ngoValidator = require("./middlewares/validators/NgoValidator");
 const incidentValidator = require("./middlewares/validators/IncidentValidator");
 const sessionValidator = require("./middlewares/validators/SessionValidator");
 
-// import controllers
-const NgoController = require("./controllers/NgoController");
-const IncidentController = require("./controllers/IncidentController");
-const ProfileController = require("./controllers/ProfileController");
-const SessionController = require("./controllers/SessionController");
-
 // setup URIs (paths)
+router.post("/session", sessionValidator.bodyCheck, SessionController.create);
+router.delete(
+  "/session",
+  middlewares.isAuthenticated,
+  SessionController.destroy
+);
+
+router.get("/profile", middlewares.isAuthenticated, ProfileController.index);
+
 router.post("/ngo", ngoValidator.bodyCheck, NgoController.create);
 router.get("/ngos", NgoController.index);
 router.get("/ngo/:id", ngoValidator.paramCheck, NgoController.show);
@@ -54,14 +61,4 @@ router.delete(
   IncidentController.delete
 );
 
-router.get("/profile", middlewares.isAuthenticated, ProfileController.index);
-
-router.post("/session", sessionValidator.bodyCheck, SessionController.create);
-router.delete(
-  "/session",
-  middlewares.isAuthenticated,
-  SessionController.destroy
-);
-
-// export router with paths
 module.exports = router;
