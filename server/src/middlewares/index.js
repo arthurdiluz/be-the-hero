@@ -1,6 +1,6 @@
 module.exports = {
   isAuthenticated: (req, res, next) => {
-    // this authentication verification must be updated
+    // FIXME: req.session.isAuthenticated does not exist (but should)
     if (req.session.isAuthenticated) {
       return next();
     } else {

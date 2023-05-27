@@ -6,38 +6,30 @@ const incident = require("../database/models/incident");
 
 module.exports = {
   async create(req, res) {
-    const { errors } = validationResult(req);
-    if (errors.length) return res.status(422).json(errors);
-
-    const { title, description, value } = req.body;
-    const { ngo_id } = req.headers;
-    const id = crypto.randomBytes(4).toString("hex");
-    let incident = null;
-
     try {
+      const { errors } = validationResult(req);
+
+      if (errors.length) return res.status(422).json(errors);
+
+      const { title, description, value } = req.body;
+      const { ngo_id } = req.headers;
+      const id = crypto.randomBytes(4).toString("hex");
+
       if (!(await NGO.find({ id: ngo_id })).length) {
         return res.status(404).json({
           error: `NGO with id ${ngo_id} not found`,
         });
       }
-    } catch (error) {
-      return res.status(500).json(error);
-    }
 
-    try {
-      incident = await Incident.create({
+      const incident = await Incident.create({
         id: id,
         title: title,
         description: description,
         value: Number(value),
         ngo_owner: await NGO.findOne({ id: ngo_id }),
       });
-    } catch (error) {
-      return res.status(500).json(error);
-    }
 
-    try {
-      NGO.findOneAndUpdate(
+      await NGO.findOneAndUpdate(
         {
           id: ngo_id,
         },
@@ -45,26 +37,22 @@ module.exports = {
           $push: {
             incidents: incident,
           },
-        },
-        (error) => {
-          if (error) return res.status(204).json(error);
         }
       );
+
+      return res.status(201).json({ id: incident["id"] });
     } catch (error) {
       return res.status(500).json(error);
     }
-
-    return res.status(201).json({ id: incident["id"] });
   },
 
   async index(req, res) {
-    const { page = 1 } = req.query; // get page param value; set 1 if any page param exist
-    const count = await incident.count(); // counts the amount of incidents existent
-    const limPage = 5; // amount of registers per page
-    let incidents = null;
-
     try {
-      incidents = await Incident.find() // get all incidents from database
+      const { page = 1 } = req.query; // get page param value; set 1 if any page param exist
+      const count = await incident.count(); // counts the amount of incidents existent
+      const limPage = 5; // amount of registers per page
+
+      const incidents = await Incident.find() // get all incidents from database
         .populate({
           // join 'ngo' columns with 'incident' specific columns
           path: "ngo_owner",
@@ -72,42 +60,46 @@ module.exports = {
         })
         .limit(limPage) // limit return registers
         .skip((page - 1) * limPage); // set registers to be presented
+
+      /* when making pagination, the amount of items in database
+      is sent to front-end through the response's header */
+      res.header("x-total-count", count);
+
+      return res.status(206).json(incidents);
     } catch (error) {
       return res.status(500).json(error);
     }
-
-    /* when making pagination, the amount of items in database
-    is sent to front-end through the response's header */
-    res.header("x-total-count", count);
-
-    return res.status(206).json(incidents);
   },
 
   async show(req, res) {
-    const { errors } = validationResult(req);
-    if (errors.length) return res.status(422).json(errors);
-
-    const { id } = req.params;
-
     try {
-      Incident.findOne({ id: id }, (error, incident) => {
-        if (error) return res.status(404).json(error);
-        return res.status(200).json(incident);
-      });
+      const { errors } = validationResult(req);
+
+      if (errors.length) return res.status(422).json(errors);
+
+      const { id } = req.params;
+      const incident = await Incident.findOne({ id: id });
+
+      if (!incident) {
+        return res.status(404).json({ error: `Incident ID "${id}" not found` });
+      }
+
+      return res.status(200).json(incident);
     } catch (error) {
       return res.status(500).json(error);
     }
   },
 
   async update(req, res) {
-    const { errors } = validationResult(req);
-    if (errors.length) return res.status(422).json(errors);
-
-    const { id } = req.params;
-    const { title, description, value } = req.body;
-
     try {
-      Incident.findOneAndUpdate(
+      const { errors } = validationResult(req);
+
+      if (errors.length) return res.status(422).json(errors);
+
+      const { id } = req.params;
+      const { title, description, value } = req.body;
+
+      const updated = await Incident.findOneAndUpdate(
         {
           id: id,
         },
@@ -117,12 +109,14 @@ module.exports = {
           value: value,
           created_at: (await Incident.findOne({ id: id }))["created_at"],
           updated_at: Date.now(),
-        },
-        (error) => {
-          if (error) return res.status(400).json(error);
-          return res.status(201).send();
         }
       );
+
+      if (!updated) {
+        return res.status(400).json({ error: "Incident could not be updated" });
+      }
+
+      return res.status(201).send();
     } catch (error) {
       return res.status(500).json(error);
     }
@@ -130,6 +124,7 @@ module.exports = {
 
   async delete(req, res) {
     const errors = validationResult(req)["errors"];
+
     if (errors.length) return res.status(422).json(errors);
 
     const { ngo_id } = req.headers;
@@ -137,16 +132,19 @@ module.exports = {
 
     // check whether given incident exists and its NGO
     try {
-      Incident.findOne({ id: incident_id }, (error, incident) => {
-        if (error) return res.status(400).json(error);
-        if (!incident)
-          return res
-            .status(404)
-            .json(`Incident with id '${incident_id}' not found`);
-        NGO.findOne({ id: ngo_id }, (error) => {
-          if (error) return res.status(404).json(error);
-        });
-      });
+      const incident = await Incident.findOne({ id: incident_id });
+
+      if (!incident) {
+        return res
+          .status(404)
+          .json(`Incident with id '${incident_id}' not found`);
+      }
+
+      const ngo = await NGO.findOne({ id: ngo_id });
+
+      if (!ngo) {
+        return res.status(404).json({ error: "NGO not found" });
+      }
     } catch (error) {
       return res.status(500).json(error);
     }
@@ -155,36 +153,38 @@ module.exports = {
     try {
       const { _id: objId } =
         (await Incident.findOne({ id: incident_id }, "_id")) || null;
-      if (objId === null)
+
+      if (!objId) {
         return res
           .status(404)
           .json(`Incident with ID ${incident_id} not found`);
+      }
 
-      NGO.findOne({ id: ngo_id }, (error, ngo) => {
-        if (error) return res.status(400).json(error);
+      const ngo = await NGO.findOne({ id: ngo_id });
 
-        const incidentIndex = ngo.incidents.indexOf(objId);
+      if (!ngo) {
+        res.status(400).json({ error: "NGO not found" });
+      }
 
-        if (incidentIndex === -1)
-          return res.status(404).json("Incident not registered in this NGO");
+      const incidentIndex = ngo.incidents.indexOf(objId);
 
-        ngo.incidents.splice(incidentIndex, 1); // remove incident from NGO incidents list
-        ngo.save((error) => {
-          if (error) return res.status(400).json("Could not save changes");
-        });
-      });
+      if (incidentIndex === -1) {
+        return res.status(404).json("Incident not registered in this NGO");
+      }
+
+      ngo.incidents.splice(incidentIndex, 1); // remove incident from NGO incidents list
+      ngoSave = await ngo.save();
+
+      if (!ngoSave) {
+        return res.status(400).json({ error: "Could not save changes" });
+      }
+
+      // remove incident from database
+      await Incident.deleteOne({ id: incident_id });
+
+      return res.status(204).send();
     } catch (error) {
       return res.status(500).json(error);
     }
-
-    // remove incident from database
-    try {
-      Incident.deleteOne({ id: incident_id }, (error) => {
-        if (error) return res.status(400).json(error);
-      });
-    } catch (error) {
-      return res.status(500).json(error);
-    }
-    return res.status(204).send();
   },
 };
