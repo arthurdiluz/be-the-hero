@@ -1,12 +1,12 @@
-import React from 'react'
+import React from "react";
 
-import 'intl'
-import 'intl/locale-data/jsonp/en-US'
+import "intl";
+import "intl/locale-data/jsonp/en-US";
 
-import Routes from './src/Routes'
+import Routes from "./src/Routes";
 
 function App() {
-	return ( <Routes /> )
+  return <Routes />;
 }
 
-export default App
+export default App;
