@@ -1,5 +1,7 @@
 const { validationResult } = require("express-validator");
+const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
+
 const NGO = require("../database/models/ngo");
 
 module.exports = {
@@ -12,46 +14,33 @@ module.exports = {
         return res.status(422).json(errors);
       }
 
-      const ngo = await NGO.findOne({ email: email });
+      const ngo = await NGO.findOne({ email });
 
       if (!ngo) {
         return res.status(400).json({ error: "Invalid credentials" });
       }
 
-      bcrypt
-        .compare(password, ngo.password)
-        .then((isMatch) => {
-          if (isMatch) {
-            Object.assign(req.session, { isAuthenticated: true });
-            req.session.save((error) => {
-              if (error) return res.status(500).json(error);
-              return res.status(202).json({
-                id: ngo.id,
-                name: ngo.name,
-                email: ngo.email,
-                whatsapp: ngo.whatsapp,
-                city: ngo.city,
-                state: ngo.state,
-                incidents: ngo.incidents,
-                created_at: ngo.created_at,
-                updated_at: ngo.updated_at,
-              });
-            });
-          } else {
-            return res.status(401).json({ error: "Invalid password" });
-          }
-        })
-        .catch((error) => {
-          return res.status(500).json({ error: error });
-        });
+      const isCorrectPassword = await bcrypt.compare(password, ngo.password);
+
+      if (!isCorrectPassword) {
+        return res.status(401).json({ error: "Invalid password" });
+      }
+
+      const token = jwt.sign({ id: ngo.id }, process.env["SESSION_SECRET"], {
+        expiresIn: "30s",
+      });
+
+      req.session.access_token = token;
+      await req.session.save();
+
+      return await res.status(202).json({ access_token: token });
     } catch (error) {
       return res.status(500).json(error);
     }
   },
 
   async destroy(req, res) {
-    req.session.destroy(() => {
-      return res.status(204).send();
-    });
+    await req.session.destroy();
+    return res.status(204).send();
   },
 };
