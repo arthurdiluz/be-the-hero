@@ -3,7 +3,8 @@ const jwt = require("jsonwebtoken");
 module.exports = {
   isAuthenticated: async (req, res, next) => {
     try {
-      const accessToken = req.session["access_token"];
+      const accessToken =
+        req.session?.access_token || req.headers?.access_token;
 
       if (!accessToken) {
         return res.status(401).json({ error: "Unauthenticated" });
@@ -19,6 +20,7 @@ module.exports = {
 
       next();
     } catch (error) {
+      console.error(error);
       return res.status(500).json(error);
     }
   },

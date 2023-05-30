@@ -27,7 +27,7 @@ module.exports = {
       }
 
       const token = jwt.sign({ id: ngo.id }, process.env["SESSION_SECRET"], {
-        expiresIn: "30s",
+        expiresIn: "86400000",
       });
 
       req.session.access_token = token;

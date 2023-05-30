@@ -131,6 +131,7 @@ module.exports = {
   async delete(req, res) {
     try {
       const errors = validationResult(req)["errors"];
+
       if (errors.length) return res.status(422).json(errors);
 
       const { ngo_id } = req.headers;

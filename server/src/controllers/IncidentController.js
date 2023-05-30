@@ -1,5 +1,6 @@
 const { validationResult } = require("express-validator");
 const crypto = require("crypto");
+const jwt = require("jsonwebtoken");
 const Incident = require("../database/models/incident");
 const NGO = require("../database/models/ngo");
 const incident = require("../database/models/incident");
@@ -12,12 +13,13 @@ module.exports = {
       if (errors.length) return res.status(422).json(errors);
 
       const { title, description, value } = req.body;
-      const { ngo_id } = req.headers;
+      const { access_token } = req.headers;
       const id = crypto.randomBytes(4).toString("hex");
+      const { id: ngoId } = jwt.decode(access_token) || undefined;
 
-      if (!(await NGO.find({ id: ngo_id })).length) {
+      if (!(await NGO.find({ id: ngoId })).length) {
         return res.status(404).json({
-          error: `NGO with id ${ngo_id} not found`,
+          error: `NGO with id ${ngoId} not found`,
         });
       }
 
@@ -26,18 +28,12 @@ module.exports = {
         title: title,
         description: description,
         value: Number(value),
-        ngo_owner: await NGO.findOne({ id: ngo_id }),
+        ngo_owner: await NGO.findOne({ id: ngoId }),
       });
 
       await NGO.findOneAndUpdate(
-        {
-          id: ngo_id,
-        },
-        {
-          $push: {
-            incidents: incident,
-          },
-        }
+        { id: ngoId },
+        { $push: { incidents: incident } }
       );
 
       return res.status(201).json({ id: incident["id"] });
@@ -100,15 +96,14 @@ module.exports = {
       const { title, description, value } = req.body;
 
       const updated = await Incident.findOneAndUpdate(
+        { id },
         {
-          id: id,
-        },
-        {
-          title: title,
-          description: description,
-          value: value,
-          created_at: (await Incident.findOne({ id: id }))["created_at"],
-          updated_at: Date.now(),
+          $set: {
+            title,
+            description,
+            value,
+            updated_at: new Date(),
+          },
         }
       );
 
@@ -123,56 +118,44 @@ module.exports = {
   },
 
   async delete(req, res) {
-    const errors = validationResult(req)["errors"];
-
-    if (errors.length) return res.status(422).json(errors);
-
-    const { ngo_id } = req.headers;
-    const { id: incident_id } = req.params;
-
-    // check whether given incident exists and its NGO
     try {
-      const incident = await Incident.findOne({ id: incident_id });
+      const errors = validationResult(req)["errors"];
+
+      if (errors.length) return res.status(422).json(errors);
+
+      const { id: incidentId } = req.params;
+      const { access_token } = req.headers;
+      const { id: ngoId } = jwt.decode(access_token) || undefined;
+
+      const incident = await Incident.findOne({ id: incidentId });
+      const ngo = await NGO.findOne({ id: ngoId });
 
       if (!incident) {
-        return res
-          .status(404)
-          .json(`Incident with id '${incident_id}' not found`);
+        return res.status(404).json(`Incident with id '${id}' not found`);
       }
-
-      const ngo = await NGO.findOne({ id: ngo_id });
 
       if (!ngo) {
-        return res.status(404).json({ error: "NGO not found" });
+        return res.status(404).json({
+          error: `NGO with id ${ngoId} not found`,
+        });
       }
-    } catch (error) {
-      return res.status(500).json(error);
-    }
 
-    // remove incident from NGO list of incidents
-    try {
+      // remove incident from NGO list of incidents
       const { _id: objId } =
-        (await Incident.findOne({ id: incident_id }, "_id")) || null;
+        (await Incident.findOne({ id: incidentId }, "_id")) || null;
 
       if (!objId) {
-        return res
-          .status(404)
-          .json(`Incident with ID ${incident_id} not found`);
+        return res.status(404).json(`Incident with ID ${incidentId} not found`);
       }
 
-      const ngo = await NGO.findOne({ id: ngo_id });
-
-      if (!ngo) {
-        res.status(400).json({ error: "NGO not found" });
-      }
-
-      const incidentIndex = ngo.incidents.indexOf(objId);
+      const incidentIndex = ngo.incidents.indexOf(objId.toString());
 
       if (incidentIndex === -1) {
         return res.status(404).json("Incident not registered in this NGO");
       }
 
-      ngo.incidents.splice(incidentIndex, 1); // remove incident from NGO incidents list
+      // remove incident from NGO incidents list
+      ngo.incidents.splice(incidentIndex, 1);
       ngoSave = await ngo.save();
 
       if (!ngoSave) {
@@ -180,7 +163,7 @@ module.exports = {
       }
 
       // remove incident from database
-      await Incident.deleteOne({ id: incident_id });
+      await Incident.deleteOne({ id: incidentId });
 
       return res.status(204).send();
     } catch (error) {
