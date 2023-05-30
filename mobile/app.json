@@ -3,7 +3,23 @@
     "name": "BeTheHero",
     "slug": "bethehero",
     "version": "1.0.0",
-    "assetBundlePatterns": ["**/*"]
+    "orientation": "portrait",
+    "icon": "./src/assets/logo.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./src/assets/logo@3x.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#ffffff"
+      }
+    }
   },
   "name": "BeTheHero"
 }

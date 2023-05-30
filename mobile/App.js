@@ -1,12 +1,9 @@
 import React from "react";
+import Routes from "./src/Routes";
 
 import "intl";
 import "intl/locale-data/jsonp/en-US";
 
-import Routes from "./src/Routes";
-
-function App() {
+export default function App() {
   return <Routes />;
 }
-
-export default App;
