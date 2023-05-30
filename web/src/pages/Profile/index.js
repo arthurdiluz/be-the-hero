@@ -1,36 +1,61 @@
 import React, { useState, useEffect } from "react";
 import { Link, useHistory } from "react-router-dom";
 import { FiPower, FiTrash2, FiEdit } from "react-icons/fi";
+import { decodeToken } from "react-jwt";
 import api from "../../services/api";
 import "./styles.css";
 import logoImg from "../../assets/logo.svg";
 
 function Profile() {
-  const ngoId = localStorage.getItem("ngoId");
-  const ngoName = localStorage.getItem("ngoName");
+  const [accessToken, setAccessToken] = useState(
+    localStorage.getItem("access_token")
+  );
+  const [ngoId, setNgoId] = useState("");
+  const [ngoData, setNgoData] = useState("");
   const [incidents, setIncidents] = useState([]);
-
   const history = useHistory();
 
-  if (!ngoId) return history.push("/");
+  useEffect(() => {
+    setAccessToken(localStorage.getItem("access_token"));
+  }, []);
 
   useEffect(() => {
-    api
-      .get("/profile", {
-        headers: {
-          authorization: ngoId,
-        },
-      })
-      .then((response) => {
-        setIncidents(response.data);
-      });
+    if (!accessToken) {
+      return history.push("/");
+    }
+
+    setNgoId(decodeToken(accessToken).id);
+  }, [accessToken, history]);
+
+  useEffect(() => {
+    if (ngoId) {
+      api
+        .get(`/ngo/${ngoId}`)
+        .then(({ data }) => setNgoData(data))
+        .catch((error) => console.error(error));
+    }
   }, [ngoId]);
+
+  useEffect(() => {
+    if (accessToken) {
+      api
+        .get("/profile", {
+          headers: {
+            access_token: accessToken,
+          },
+        })
+        .then(({ data }) => {
+          setIncidents(data);
+        })
+        .catch((error) => console.error(error));
+    }
+  }, [accessToken]);
 
   async function handleDeleteIncident(id) {
     try {
       const response = await api.delete(`/incident/${id}`, {
         headers: {
-          authorization: ngoId,
+          access_token: accessToken,
         },
       });
 
@@ -53,7 +78,7 @@ function Profile() {
     <div className="profile-container">
       <header>
         <img src={logoImg} alt="Be The Hero" />
-        <span>Welcome, {ngoName}!</span>
+        <span>Welcome, {ngoData?.name || ""}!</span>
         <Link className="button" to="/incident/new">
           Register a new case
         </Link>

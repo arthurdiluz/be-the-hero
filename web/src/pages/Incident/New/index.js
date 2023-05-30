@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useHistory } from "react-router-dom";
 import api from "../../../services/api";
 import { FiArrowLeft } from "react-icons/fi";
@@ -6,31 +6,42 @@ import "./styles.css";
 import logoImg from "../../../assets/logo.svg";
 
 function NewIncident() {
-  const ngoId = localStorage.getItem("ngoId");
-
+  const [accessToken, setAccessToken] = useState(
+    localStorage.getItem("access_token")
+  );
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [value, setValue] = useState("");
   const history = useHistory();
 
-  async function handleNewIncident(event) {
+  useEffect(() => {
+    setAccessToken(localStorage.getItem("access_token"));
+  }, []);
+
+  useEffect(() => {
+    if (!accessToken) {
+      return history.push("/");
+    }
+  }, [accessToken, history]);
+
+  function handleNewIncident(event) {
     event.preventDefault();
 
     const data = { title, description, value };
 
-    try {
-      const response = await api.post("/incident", data, {
-        headers: { authorization: ngoId },
+    api
+      .post("/incident", data, { headers: { access_token: accessToken } })
+      .then(({ status, statusText }) => {
+        if (status <= 201) {
+          return history.push("/profile");
+        } else {
+          return alert(statusText);
+        }
+      })
+      .catch((error) => {
+        console.error(error);
+        return alert(error);
       });
-
-      if (response.status <= 201) {
-        history.push("/profile");
-      } else {
-        throw Error(response);
-      }
-    } catch (error) {
-      alert(error.args);
-    }
   }
 
   return (
@@ -62,7 +73,7 @@ function NewIncident() {
             onChange={(e) => setValue(e.target.value)}
           />
           <button className="button" type="submit">
-            Register
+            Register incident
           </button>
         </form>
       </div>

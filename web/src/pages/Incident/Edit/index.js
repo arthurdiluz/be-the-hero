@@ -6,30 +6,39 @@ import "./styles.css";
 import logoImg from "../../../assets/logo.svg";
 
 function EditIncident() {
-  const ngoId = localStorage.getItem("ngoId");
   const { id: incidentId } = useParams();
-
+  const [accessToken, setAccessToken] = useState(
+    localStorage.getItem("access_token")
+  );
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [value, setValue] = useState("");
   const history = useHistory();
 
   useEffect(() => {
-    try {
-      api
-        .get(`/incident/${incidentId}`)
-        .then((response) => {
-          setTitle(response.data.title);
-          setDescription(response.data.description);
-          setValue(response.data.value);
-        })
-        .catch((error) => console.error(error));
-    } catch (error) {
-      return alert(error.args);
-    }
+    setAccessToken(localStorage.getItem("access_token"));
   }, []);
 
-  async function handleEditIncident(event) {
+  useEffect(() => {
+    if (!accessToken) {
+      return history.push("/");
+    }
+  }, [accessToken, history]);
+
+  useEffect(() => {
+    api
+      .get(`/incident/${incidentId}`, {
+        headers: { access_token: accessToken },
+      })
+      .then(({ data }) => {
+        setTitle(data.title);
+        setDescription(data.description);
+        setValue(data.value);
+      })
+      .catch((error) => alert(error));
+  }, [incidentId]);
+
+  function handleEditIncident(event) {
     event.preventDefault();
 
     const data = {
@@ -39,19 +48,20 @@ function EditIncident() {
       value: value,
     };
 
-    try {
-      const response = await api.put("/incident", data, {
-        headers: { authorization: ngoId },
+    api
+      .put(`/incident/${incidentId}`, data, {
+        headers: { access_token: accessToken },
+      })
+      .then(({ status, statusText }) => {
+        if (status <= 201) {
+          return history.push("/profile");
+        } else {
+          return alert(statusText);
+        }
+      })
+      .catch((error) => {
+        return alert(error);
       });
-
-      if (response.status <= 201) {
-        history.push("/profile");
-      } else {
-        throw Error(response);
-      }
-    } catch (error) {
-      alert(error.args);
-    }
   }
 
   return (
@@ -83,7 +93,7 @@ function EditIncident() {
             onChange={(e) => setValue(e.target.value)}
           />
           <button className="button" type="submit">
-            Register
+            Update incident
           </button>
         </form>
       </div>

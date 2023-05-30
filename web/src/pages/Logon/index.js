@@ -12,21 +12,16 @@ function Logon() {
   const history = useHistory();
 
   // listener function to do the login
-  async function handleLogon(event) {
+  function handleLogon(event) {
     event.preventDefault();
 
-    try {
-      const response = await api.post("/session", { email, password });
-
-      // Stores id and name from ngo into the browser's local storage
-      localStorage.setItem("ngoId", response.data["id"]);
-      localStorage.setItem("ngoName", response.data["name"]);
-
-      // redirect user to profile page
-      history.push("/profile");
-    } catch (error) {
-      alert(error.args);
-    }
+    api
+      .post("/session", { email, password })
+      .then(({ data }) => {
+        localStorage.setItem("access_token", data?.access_token);
+        history.push("/profile");
+      })
+      .catch((error) => console.error(error));
   }
 
   // HTML returned when the component is rendered
