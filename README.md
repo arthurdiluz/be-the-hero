@@ -1,44 +1,40 @@
-BeTheHero
-==
+# Summary
 
-- [BeTheHero](#bethehero)
+- [Summary](#summary)
 - [Introduction](#introduction)
 - [How to run](#how-to-run)
-  - [Server](#server)
-  - [Web](#web)
-  - [Mobile](#mobile)
+- [Server](#server)
+- [Web](#web)
+- [Mobile](#mobile)
 - [Interface](#interface)
-  - [Web interface](#web-interface)
-  - [Mobile interface](#mobile-interface)
+- [Web interface](#web-interface)
+- [Mobile interface](#mobile-interface)
 - [Author](#author)
 
-Introduction
-==
+# Introduction
 
 ![BeTheHero](./images/be-the-hero.svg)
 
-This full-stack project started during the **Semana Omnistack 11** to practice some web frameworks and concepts. Since then, I have been updating the project and adding new features as I learn something new.
+**BeTheHero** is a platform where NGOs can request currency support, and anyone can help by donating money to their cases.
 
-> **BeTheHero** is a platform where NGOs can request currency support, and anyone can help by donating money to their cases.
+> I started this full-stack project during **Semana Omnistack 11** in 2020 to get started on my studies on ExpressJs, React, and React Native and kept it updated until May 30, 2023.
 
-The following technologies are being used in the project:
+BeTheHero was set up with the following technologies:
 
-- **web server:** NodeJS with Express
+- **server api:** ExpressJS
 - **database:** MongoDB
-- **web interface:** React
+- **web interface:** ReactJS
 - **mobile:** React Native through Expo
 - **validations:** Express Validator
 - **tests:** Supertest
 
-How to run
-==
+# How to run
 
 - ⚠️ You **must** run the server module in the background so you can use both the web and the app.
 
-- **Optional:** Join the [Postman project](https://app.getpostman.com/join-team?invite_code=b02a2202a9a49f73d0204c76bf28580f&ws=efe91281-b49e-481b-9bd3-01f98681182e).
+- **Optional:** See the [Postman project](https://www.postman.com/arthurdiluz-team/workspace/bethehero).
 
-Server
---
+## Server
 
 **Note: make sure your NodeJS is updated.**
 
@@ -46,21 +42,18 @@ First, install the dependencies in _package.json_.
 
 `> npm install`
 
-Now you need to create an acount in [MongoDB Atlas](https://cloud.mongodb.com/), create a project named 'BeTheHero', a database named 'bethehero', and then connect to MongoDB through the URI in *./server/src/database/index.js*.
+Now you need to create an account in [MongoDB Atlas](https://cloud.mongodb.com/), create a project named 'BeTheHero', a database named 'bethehero', and then connect to MongoDB through the URI in _./server/src/database/index.js_.
 
-Change create a file named *.env* based on *.env.example* and insert your values.
+Now create a file named _.env_ based on _.env.example_ and insert your values.
 
 Now you're able to run the server.
 
-**PRODUCTION:** *`> npm start`*
+**DEVELOPMENT:** _`> npm run dev`_
 
-**DEVELOPMENT:** *`> npm run dev`*
+Now your server application must be running at the selected address.
+You can now execute web and mobile applications.
 
-Now your server application must be running in the selected address.
-You can now execute web and/or mobile application.
-
-Web
---
+## Web
 
 First, install the dependencies in _package.json_.
 
@@ -70,11 +63,10 @@ Now you're you can run the web application.
 
 `> npm start`
 
-Now the development server will run and the addresses of your application will appear on Terminal.
+Now the development server will run, and the addresses of your application will appear on Terminal.
 The website will also open automatically in your main browser.
 
-Mobile
---
+## Mobile
 
 First, install the dependencies in _package.json_.
 
@@ -91,14 +83,14 @@ There, you'll be able to choose where you'll run your application.
 You can choose between:
 
 - Android device or emulator
-- iOS device or emulator *(emulator available only for macOS)*
+- iOS device or emulator _(emulator available only for macOS)_
 - Web browser (emulated)
 
-**if any errors occurred, try to run the following command:**
+**if any errors occurrs, try to run the following command:**
 
->`> npm audit fix`
+> `> npm audit fix`
 
-and the packages will be fixed.
+that the packages will be fixed.
 
 # Interface
 
@@ -108,10 +100,6 @@ and the packages will be fixed.
 
 ![login](./images/web/login.png)
 
-### **Homepage**
-
-![homepage](./images/web/homepage.png)
-
 ### **Register NGO**
 
 ![user-register](./images/web/register-ngo.png)
@@ -120,7 +108,12 @@ and the packages will be fixed.
 
 ![case-register](./images/web/register-case.png)
 
+### **Homepage**
+
+![homepage](./images/web/homepage.png)
+
 ---
+
 ## Mobile interface
 
 ### **Home screen**
@@ -141,7 +134,6 @@ and the packages will be fixed.
 
 ---
 
-Author
-==
+# Author
 
-This project has been developed by [Arthur Diniz da Luz](https://arthurdiluz.github.io/).
+Made by [Arthur Diniz da Luz](https://arthurdiluz.github.io/).
