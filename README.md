@@ -17,7 +17,7 @@
 
 **BeTheHero** is a platform where NGOs can request currency support, and anyone can help by donating money to their cases.
 
-> I started this full-stack project during **Semana Omnistack 11** in 2020 to get started on my studies on ExpressJs, React, and React Native and kept it updated until May 30, 2023.
+> I started this full-stack project during **Semana Omnistack 11** in 2020 to get started on my studies on ExpressJs, React, and React Native. Due to the fact this project was developed in 2020, some features may not work as expected.
 
 ![BeTheHero](./images/banner.png)
 
